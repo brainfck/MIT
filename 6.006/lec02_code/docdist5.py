@@ -3,6 +3,7 @@
 #
 # Original version by Ronald L. Rivest on February 14, 2007
 # Revision by Erik D. Demaine on January 31, 2011
+# Modified to work on Python 3.11 by Mykhailo T. on Jun 11, 2023
 #
 # Usage:
 #    docdist5.py filename1 filename2
@@ -29,11 +30,7 @@
 #    norm(x) = sqrt(inner_product(x,x))
 
 import math
-    # math.acos(x) is the arccosine of x.
-    # math.sqrt(x) is the square root of x.
-
 import string
-
 import sys
 
 ##################################
@@ -45,10 +42,10 @@ def read_file(filename):
     return a list of the lines of text in the file.
     """
     try:
-        f = open(filename, 'r')
-        return f.readlines()
-    except IOError:
-        print "Error opening or reading input file: ",filename
+        with open(filename, 'r') as f:
+            return f.readlines()
+    except FileNotFoundError:
+        print("Error opening or reading input file:", filename)
         sys.exit()
 
 #################################################
@@ -69,8 +66,8 @@ def get_words_from_line_list(L):
 
 # global variables needed for fast parsing
 # translation table maps upper case to lower case and punctuation to spaces
-translation_table = string.maketrans(string.punctuation+string.uppercase,
-                                     " "*len(string.punctuation)+string.lowercase)
+translation_table = str.maketrans(string.punctuation+string.ascii_uppercase,
+                                     " "*len(string.punctuation)+string.ascii_lowercase)
 
 def get_words_from_string(line):
     """
@@ -136,14 +133,14 @@ def word_frequencies_for_file(filename):
     freq_mapping = count_frequency(word_list)
     insertion_sort(freq_mapping)
 
-    print "File",filename,":",
-    print len(line_list),"lines,",
-    print len(word_list),"words,",
-    print len(freq_mapping),"distinct words"
+    print("File", filename, ":", end=" ")
+    print(len(line_list), "lines,", end=" ")
+    print(len(word_list), "words,", end=" ")
+    print(len(freq_mapping), "distinct words")
 
     return freq_mapping
 
-def inner_product(L1,L2):
+def inner_product(L1, L2):
     """
     Inner product between two vectors, where vectors
     are represented as alphabetically sorted (word,freq) pairs.
@@ -151,14 +148,14 @@ def inner_product(L1,L2):
     Example: inner_product([["and",3],["of",2],["the",5]],
                            [["and",4],["in",1],["of",1],["this",2]]) = 14.0 
     """
-    sum = 0.0
+    sum_val = 0.0
     i = 0
     j = 0
     while i<len(L1) and j<len(L2):
         # L1[i:] and L2[j:] yet to be processed
         if L1[i][0] == L2[j][0]:
             # both vectors have this word
-            sum += L1[i][1] * L2[j][1]
+            sum_val += L1[i][1] * L2[j][1]
             i += 1
             j += 1
         elif L1[i][0] < L2[j][0]:
@@ -167,35 +164,29 @@ def inner_product(L1,L2):
         else:
             # word L2[j][0] is in L2 but not L1
             j += 1
-    return sum
+    return sum_val
 
-def vector_angle(L1,L2):
+def vector_angle(L1, L2):
     """
     The input is a list of (word,freq) pairs, sorted alphabetically.
 
     Return the angle between these two vectors.
     """
-    numerator = inner_product(L1,L2)
-    denominator = math.sqrt(inner_product(L1,L1)*inner_product(L2,L2))
-    return math.acos(numerator/denominator)
+    numerator = inner_product(L1, L2)
+    denominator = math.sqrt(inner_product(L1, L1) * inner_product(L2, L2))
+    return math.acos(numerator / denominator)
 
 def main():
     if len(sys.argv) != 3:
-        print "Usage: docdist5.py filename_1 filename_2"
+        print("Usage: docdist5.py filename_1 filename_2")
     else:
         filename_1 = sys.argv[1]
         filename_2 = sys.argv[2]
         sorted_word_list_1 = word_frequencies_for_file(filename_1)
         sorted_word_list_2 = word_frequencies_for_file(filename_2)
-        distance = vector_angle(sorted_word_list_1,sorted_word_list_2)
-        print "The distance between the documents is: %0.6f (radians)"%distance
+        distance = vector_angle(sorted_word_list_1, sorted_word_list_2)
+        print("The distance between the documents is: %0.6f (radians)" % distance)
 
 if __name__ == "__main__":
-    import profile
-    profile.run("main()")
-
-    
-    
-
-
-
+    import cProfile
+    cProfile.run("main()")
